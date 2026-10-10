@@ -21,7 +21,7 @@ version: '3.6'
 
 services:
   mcp:
-    image: fabreguesm/flx-mcp-codigo:0.2.1
+    image: fabreguesm/flx-mcp-codigo:0.3.0
     hostname: flx-mcp-codigo
     networks:
       - agentes
@@ -34,6 +34,8 @@ services:
       - FTP_PASS=${FTP_PASS}
       # Evidencia de cada caso (cotizacion o brief) en flx-mcp-memoria; si no responde, en /data/evidencia.
       - MEMORIA_URL=http://flx-mcp-memoria_mcp:8100/mcp
+      # investigar con ticket lee el Helpdesk por flx-mcp-helpdesk.
+      - HELPDESK_MCP_URL=http://flx-mcp-helpdesk_mcp:8101/mcp
       # - ERP_BZR_REPO=/erp/bazaar
     # /data: clones de la API y la App y cache del ERP (vive en el nodo de NODE).
     volumes:
