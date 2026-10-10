@@ -21,7 +21,7 @@ version: '3.6'
 
 services:
   mcp:
-    image: fabreguesm/flx-mcp-codigo:0.3.3
+    image: fabreguesm/flx-mcp-codigo:0.3.4
     hostname: flx-mcp-codigo
     networks:
       - agentes
