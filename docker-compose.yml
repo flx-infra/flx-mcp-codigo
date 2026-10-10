@@ -1,0 +1,64 @@
+# ---------------------------------------------------------------------------
+# flx-mcp-codigo: acceso compartido de los agentes de Flexxus al codigo (servidor MCP)
+#
+# Codigo e imagen: bitbucket.org/flexxus_id/flx-mcp-codigo
+# Este repo es solo el stack: lo que Portainer despliega.
+#
+# API y App: clones de Bitbucket. ERP Corralon: git por SSH (192.168.121.240).
+# ERP Enterprise: Bazaar en \\192.168.121.14\erp, que pide usuario (no acepta anonimo).
+# Hasta tener un usuario de servicio para esa carpeta, el ERP Enterprise sale por el
+# FTP de respaldo (solo rama PRO, puede estar desactualizado) si se cargan FTP_USER/FTP_PASS.
+# Para activar Bazaar: descomentar el volumen erp_bazaar, su montaje y ERP_BZR_REPO, y cargar
+# ERP_SMB_USER / ERP_SMB_PASS (el nodo necesita cifs-utils).
+#
+# Sin puerto publicado ni token: lo usan los stacks de la red "flx-agentes" con
+# http://flx-mcp-codigo_mcp:8102/mcp. Estado: Asistente /api/agentes/salud?probar=1.
+#
+# Variables del stack: SERVICE_NAME, NODE, LOKI_URL y los secretos BITBUCKET_TOKEN,
+# BITBUCKET_GIT_USER, ERP_CORRALON_PASS, FTP_USER, FTP_PASS.
+# ---------------------------------------------------------------------------
+version: '3.6'
+
+services:
+  mcp:
+    image: fabreguesm/flx-mcp-codigo:0.1.0
+    hostname: flx-mcp-codigo
+    networks:
+      - agentes
+    environment:
+      - TZ=America/Argentina/Buenos_Aires
+      - BITBUCKET_TOKEN=${BITBUCKET_TOKEN}
+      - BITBUCKET_GIT_USER=${BITBUCKET_GIT_USER}
+      - ERP_CORRALON_PASS=${ERP_CORRALON_PASS}
+      - FTP_USER=${FTP_USER}
+      - FTP_PASS=${FTP_PASS}
+      # - ERP_BZR_REPO=/erp/bazaar
+    # /data: clones de la API y la App y cache del ERP (vive en el nodo de NODE).
+    volumes:
+      - datos:/data
+      # - erp_bazaar:/erp/bazaar:ro
+    deploy:
+      placement:
+        constraints: ["${NODE}"]
+      restart_policy:
+        condition: any
+        delay: 10s
+    logging:
+      driver: loki
+      options:
+        loki-url: ${LOKI_URL}
+
+volumes:
+  datos:
+    name: "${SERVICE_NAME}_datos"
+  # erp_bazaar:
+  #   driver: local
+  #   driver_opts:
+  #     type: cifs
+  #     device: "//192.168.121.14/erp"
+  #     o: "username=${ERP_SMB_USER},password=${ERP_SMB_PASS},ro,vers=3.0,uid=1000,gid=1000"
+
+networks:
+  agentes:
+    external: true
+    name: flx-agentes
