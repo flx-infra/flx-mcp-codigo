@@ -21,7 +21,7 @@ version: '3.6'
 
 services:
   mcp:
-    image: fabreguesm/flx-mcp-codigo:0.3.4
+    image: fabreguesm/flx-mcp-codigo:0.3.5
     hostname: flx-mcp-codigo
     networks:
       - agentes
@@ -36,6 +36,9 @@ services:
       - MEMORIA_URL=http://flx-mcp-memoria_mcp:8100/mcp
       # investigar con ticket lee el Helpdesk por flx-mcp-helpdesk.
       - HELPDESK_MCP_URL=http://flx-mcp-helpdesk_mcp:8101/mcp
+      # Contingencia sin red al ERP (192.168.121.x): si erp_actualizar no llega, usa la copia cargada en /data/erp y lo avisa.
+      # Sacarla cuando infraestructura habilite el acceso.
+      - ERP_SIN_RED=copia
       # - ERP_BZR_REPO=/erp/bazaar
     # /data: clones de la API y la App y cache del ERP (vive en el nodo de NODE).
     volumes:
