@@ -5,11 +5,9 @@
 # Este repo es solo el stack: lo que Portainer despliega.
 #
 # API y App: clones de Bitbucket. ERP Corralon: git por SSH (192.168.121.240).
-# ERP Enterprise: Bazaar en \\192.168.121.14\erp, que pide usuario (no acepta anonimo).
-# Hasta tener un usuario de servicio para esa carpeta, el ERP Enterprise sale por el
-# FTP de respaldo (solo rama PRO, puede estar desactualizado) si se cargan FTP_USER/FTP_PASS.
-# Para activar Bazaar: descomentar el volumen erp_bazaar, su montaje y ERP_BZR_REPO, y cargar
-# ERP_SMB_USER / ERP_SMB_PASS (el nodo necesita cifs-utils).
+# ERP Enterprise: ramas Bazaar en \\192.168.121.14\_bzr\ERP (la misma carpeta que publica el FTP), montadas por SMB
+# de solo lectura con FTP_USER / FTP_PASS. Desde 0.3.6 se exporta siempre la punta de la rama: el working tree de
+# la rama central (lo que se ve por FTP) nunca se actualiza y tiene fuente viejo.
 #
 # Sin puerto publicado ni token: lo usan los stacks de la red "flx-agentes" con
 # http://flx-mcp-codigo_mcp:8102/mcp. Estado: Asistente /api/agentes/salud?probar=1.
@@ -21,7 +19,7 @@ version: '3.6'
 
 services:
   mcp:
-    image: fabreguesm/flx-mcp-codigo:0.3.5
+    image: fabreguesm/flx-mcp-codigo:0.3.6
     hostname: flx-mcp-codigo
     networks:
       - agentes
@@ -39,11 +37,12 @@ services:
       # Contingencia sin red al ERP (192.168.121.x): si erp_actualizar no llega, usa la copia cargada en /data/erp y lo avisa.
       # Sacarla cuando infraestructura habilite el acceso.
       - ERP_SIN_RED=copia
-      # - ERP_BZR_REPO=/erp/bazaar
+      # Ramas Bazaar del ERP Enterprise (\\192.168.121.14\_bzr\ERP), como mcp/bazaar de flxwebapi: se exporta la punta de la rama.
+      - ERP_BZR_REPO=/erp/bazaar/ERP
     # /data: clones de la API y la App y cache del ERP (vive en el nodo de NODE).
     volumes:
       - datos:/data
-      # - erp_bazaar:/erp/bazaar:ro
+      - erp_bzr:/erp/bazaar:ro
     deploy:
       placement:
         constraints: ["${NODE}"]
@@ -58,12 +57,13 @@ services:
 volumes:
   datos:
     name: "${SERVICE_NAME}_datos"
-  # erp_bazaar:
-  #   driver: local
-  #   driver_opts:
-  #     type: cifs
-  #     device: "//192.168.121.14/erp"
-  #     o: "username=${ERP_SMB_USER},password=${ERP_SMB_PASS},ro,vers=3.0,uid=1000,gid=1000"
+  # \\192.168.121.14\_bzr por SMB, solo lectura, con el usuario del FTP del ERP (FTP_USER / FTP_PASS). Sin "vers": la negocia el kernel.
+  erp_bzr:
+    driver: local
+    driver_opts:
+      type: cifs
+      device: "//192.168.121.14/_bzr"
+      o: "addr=192.168.121.14,username=${FTP_USER},password=${FTP_PASS},ro,uid=1000,gid=1000"
 
 networks:
   agentes:
